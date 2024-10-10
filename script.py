@@ -11,10 +11,10 @@ import smtplib
 # Configuration
 project_name = 'node_build_app'
 region_name = 'us-east-1'
-ses_sender_email = 'vikash.indoqubix@gmail.com' 
-recipient_email = 'vikash.indoqubix@gmail.com'  # Replace with the recipient's email
-smtp_username = 'vikash.indoqubix@gmail.com'  # Your Gmail address
-smtp_password = 'rxhs asuc ygnt rdqv'  # Your Gmail app password
+ses_sender_email = '' 
+recipient_email = ''  # Replace with the recipient's email
+smtp_username = ''
+smtp_password = ''  # Your Gmail app password
 
 def get_latest_build_id(project_name):
     """Retrieve the latest build ID for a CodeBuild project."""
