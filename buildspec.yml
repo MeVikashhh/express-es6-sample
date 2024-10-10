@@ -10,7 +10,7 @@ phases:
   post_build:
     on-failure:
       commands:
-        - python3 your_script.py  
+        - python3 script.py  
 
 artifacts:
   files: "**/*"
