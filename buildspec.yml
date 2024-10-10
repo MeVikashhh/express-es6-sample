@@ -4,21 +4,21 @@ phases:
   install:
     runtime-versions:
       python: 3.x  # Specify the version of Python you need
-    commands:
-      - pip install boto3  # Install necessary packages
+    # commands:
+    #   - pip install boto3  # Install necessary packages
 
   build:
     commands:
-      - npm installl
+      - npm install
       - npm run build
       - npm run test
 
   post_build:
     commands:
       - |
-        if [ "$CODEBUILD_BUILD_STATUS" == "FAILED" ]; then
+        if [ "$CODEBUILD_BUILD_STATUS" = "FAILED" ]; then
           echo "Build failed, executing script..."
-          python3 script.py
+          python3 script.py  # Your email notification script
         fi
 
 artifacts:
