@@ -1,10 +1,12 @@
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.mime.base import MIMEBase
-from email import encoders
 import boto3
 import traceback
+from botocore.exceptions import ClientError
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
+from email.mime.text import MIMEText
+import smtplib
+
 
 # Configuration
 project_name = 'node_build_app'
@@ -36,7 +38,7 @@ def get_build_details(build_id):
         traceback.print_exc()
         return None
 
-def get_logs(log_group_name, log_stream_name, keyword="Reason: exit status 1", lines_before=100, lines_after=100):
+def get_logs(log_group_name, log_stream_name, keyword="Reason: exit status 1", lines_before=100):
     """Fetch logs from CloudWatch Logs for a specific log group and stream and extract surrounding logs for the given keyword."""
     client = boto3.client('logs', region_name=region_name)
     try:
@@ -54,29 +56,39 @@ def get_logs(log_group_name, log_stream_name, keyword="Reason: exit status 1", l
             print(f"Keyword '{keyword}' not found in logs.")
             return []
 
-        # Extract 100 lines before and after the keyword, handling out-of-bound cases
+        # Extract 100 lines before the keyword, handling out-of-bound cases
         start_index = max(0, keyword_index - lines_before)
-        end_index = min(len(log_messages), keyword_index + lines_after)
-
-        return log_messages[start_index:end_index]
+        return log_messages[start_index:keyword_index + 1]  # Include the line with the keyword
 
     except ClientError as e:
         print(f"Error fetching logs: {e}")
         traceback.print_exc()
         return []
 
-def save_logs_to_file(logs, filename='build_logs.txt'):
-    """Save logs to a file."""
+def save_logs_to_rtf(logs, filename='build_logs.rtf'):
+    """Save logs to an RTF file with highlighted text for specific lines."""
+    rtf_content = "{\\rtf1\\ansi\\ansicpg1252\\deff0\\nouicompat\\deflang1033{\\fonttbl{\\f0\\fnil\\fcharset0 Calibri;}}\n"
+    rtf_content += "{\\*\\generator Riched20 10.0.18362;}\\viewkind4\\uc1 \n"
+    rtf_content += "\\pard\\fs22\\lang9 "  # Set font size and language
+
+    for log in logs:
+        # Check if log starts with 'Phase context status code:' and ends with 'Reason: exit status 1'
+        if log.startswith("Phase context status code:") and "Reason: exit status 1" in log:
+            rtf_content += "{\\colortbl ;\\red255\\green0\\blue0;\\red255\\green255\\blue0;}"
+            rtf_content += "\\highlight1\\cf1 " + log.replace("\n", "\\par ") + "\\par "
+        else:
+            rtf_content += log.replace("\n", "\\par ") + "\\par "
+
+    rtf_content += "}"
+
     try:
         with open(filename, 'w') as f:
-            for log in logs:
-                f.write(f"{log}\n")
+            f.write(rtf_content)
     except Exception as e:
-        print(f"Error saving logs to file: {e}")
+        print(f"Error saving logs to RTF file: {e}")
         traceback.print_exc()
 
-
-def send_email(logs, filename='build_logs.txt'):
+def send_email(logs, filename='build_logs.rtf'):
     """Send an email with the build logs as an attachment."""
     try:
         # Create a multipart message
@@ -123,8 +135,8 @@ def main():
                 build_logs = get_logs(log_group_name, log_stream_name)
 
                 if build_logs:
-                    # Save logs to a file
-                    save_logs_to_file(build_logs)
+                    # Save logs to an RTF file
+                    save_logs_to_rtf(build_logs)
 
                     # Send the logs via email
                     send_email(build_logs)
