@@ -36,12 +36,30 @@ def get_build_details(build_id):
         traceback.print_exc()
         return None
 
-def get_logs(log_group_name, log_stream_name):
-    """Fetch logs from CloudWatch Logs for a specific log group and stream."""
+def get_logs(log_group_name, log_stream_name, keyword="Reason: exit status 1", lines_before=100, lines_after=100):
+    """Fetch logs from CloudWatch Logs for a specific log group and stream and extract surrounding logs for the given keyword."""
     client = boto3.client('logs', region_name=region_name)
     try:
-        response = client.get_log_events(logGroupName=log_group_name, logStreamName=log_stream_name, limit=100)
-        return [event['message'] for event in response['events']]
+        response = client.get_log_events(logGroupName=log_group_name, logStreamName=log_stream_name, limit=10000)  # Fetch a larger batch of logs
+        log_messages = [event['message'] for event in response['events']]
+        
+        # Find the keyword in the logs
+        keyword_index = -1
+        for i, log in enumerate(log_messages):
+            if keyword in log:
+                keyword_index = i
+                break
+        
+        if keyword_index == -1:
+            print(f"Keyword '{keyword}' not found in logs.")
+            return []
+
+        # Extract 100 lines before and after the keyword, handling out-of-bound cases
+        start_index = max(0, keyword_index - lines_before)
+        end_index = min(len(log_messages), keyword_index + lines_after)
+
+        return log_messages[start_index:end_index]
+
     except ClientError as e:
         print(f"Error fetching logs: {e}")
         traceback.print_exc()
@@ -68,7 +86,7 @@ def send_email(logs, filename='build_logs.txt'):
         msg['To'] = recipient_email
 
         # Add body text to the email
-        body = MIMEText("\n".join(logs), 'plain')
+        body = "The Log File is Attached Below"
         msg.attach(body)
 
         # Attach the log file
