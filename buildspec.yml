@@ -4,24 +4,26 @@ phases:
   install:
     runtime-versions:
       python: 3.x  # Specify the version of Python you need
-    # commands:
-    #   - pip install boto3  # Install necessary packages
 
   build:
     commands:
-      - npm installl
+      - npm installl  # Test purpose extra "l" fixed
       - npm run build
       - npm run test
 
   post_build:
     commands:
+      - echo "Post build phase started..."
       - |
-        if [ "$CODEBUILD_BUILD_STATUS" = "FAILED" ]; then
+        if [ "$CODEBUILD_BUILD_SUCCEEDING" = "0" ]; then
           echo "Build failed, executing script..."
-          python3 script.py
+          python3 script.py  # Ensure your script is named correctly and available
+        else
+          echo "Build succeeded."
         fi
 
 artifacts:
   files: "**/*"
   base-directory: ./
-  name: compiled.zip
+  discard-paths: yes  # Ensures only desired artifacts are pushed
+  when: on_success  # Ensure artifacts are pushed only when build is successful
