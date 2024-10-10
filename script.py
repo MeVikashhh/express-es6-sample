@@ -1,6 +1,7 @@
 import boto3
 import smtplib
 from email.mime.text import MIMEText
+import traceback
 
 # Configuration
 project_name = 'node_build_app'
@@ -42,19 +43,14 @@ def send_email(logs):
         server.sendmail(ses_sender_email, [recipient_email], msg.as_string())
 
 def main():
-    latest_build_id = get_latest_build_id(project_name)
-    if not latest_build_id:
-        print("No builds found for the project.")
-        return
-    
-    build_details = get_build_details(latest_build_id)
-    if build_details['buildStatus'] == 'FAILED':
-        log_group_name = build_details['logs']['groupName']
-        log_stream_name = build_details['logs']['streamName']
-        logs = get_logs(log_group_name, log_stream_name)
-        save_logs_to_file(logs)
-        send_email(logs)
-        print("Logs saved and email sent.")
+    try:
+        # Your existing code for retrieving build info and sending email
+        latest_build_id = get_latest_build_id(project_name)
+        build_logs = get_build_logs(latest_build_id)
+        send_email(build_logs)  # This should be your email sending function
+    except Exception as e:
+        print(f"Error occurred: {e}")
+        traceback.print_exc()  # Print full stack trace to the logs
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
