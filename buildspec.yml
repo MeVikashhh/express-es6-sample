@@ -18,7 +18,7 @@ phases:
       - |
         if [ "$CODEBUILD_BUILD_STATUS" = "FAILED" ]; then
           echo "Build failed, executing script..."
-          python3 script.py  # Your email notification script
+          python3 script.py
         fi
 
 artifacts:
