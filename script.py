@@ -85,9 +85,9 @@ def send_email(logs, filename='build_logs.txt'):
         msg['From'] = ses_sender_email
         msg['To'] = recipient_email
 
-        # Add body text to the email
+        # Add body text to the email as MIMEText
         body = "The Log File is Attached Below"
-        msg.attach(body)
+        msg.attach(MIMEText(body, 'plain'))
 
         # Attach the log file
         with open(filename, 'rb') as attachment:
@@ -97,7 +97,7 @@ def send_email(logs, filename='build_logs.txt'):
             part.add_header('Content-Disposition', f'attachment; filename={filename}')
             msg.attach(part)
 
-        # Send email via Gmail SMTP server
+        # Send email via SMTP server (update this section as needed for your SMTP server)
         with smtplib.SMTP('smtp.gmail.com', 587) as server:
             server.starttls()
             server.login(smtp_username, smtp_password)
