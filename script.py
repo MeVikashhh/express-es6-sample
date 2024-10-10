@@ -1,7 +1,8 @@
-import boto3
 import smtplib
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from botocore.exceptions import ClientError
+from email.mime.base import MIMEBase
+from email import encoders
 import traceback
 
 # Configuration
@@ -55,21 +56,35 @@ def save_logs_to_file(logs, filename='build_logs.txt'):
         print(f"Error saving logs to file: {e}")
         traceback.print_exc()
 
-def send_email(logs):
-    """Send an email using Gmail SMTP server with the build logs."""
+
+def send_email(logs, filename='build_logs.txt'):
+    """Send an email with the build logs as an attachment."""
     try:
-        msg = MIMEText("\n".join(logs))
+        # Create a multipart message
+        msg = MIMEMultipart()
         msg['Subject'] = f'Build Failure Logs for {project_name}'
         msg['From'] = ses_sender_email
         msg['To'] = recipient_email
+
+        # Add body text to the email
+        body = MIMEText("\n".join(logs), 'plain')
+        msg.attach(body)
+
+        # Attach the log file
+        with open(filename, 'rb') as attachment:
+            part = MIMEBase('application', 'octet-stream')
+            part.set_payload(attachment.read())
+            encoders.encode_base64(part)
+            part.add_header('Content-Disposition', f'attachment; filename={filename}')
+            msg.attach(part)
 
         # Send email via Gmail SMTP server
         with smtplib.SMTP('smtp.gmail.com', 587) as server:
             server.starttls()
             server.login(smtp_username, smtp_password)
             server.sendmail(ses_sender_email, [recipient_email], msg.as_string())
-        
-        print(f"Email sent successfully to {recipient_email}")
+
+        print(f"Email with attachment sent successfully to {recipient_email}")
     except Exception as e:
         print(f"Error sending email: {e}")
         traceback.print_exc()
