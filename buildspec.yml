@@ -7,6 +7,11 @@ phases:
       - npm run build
       - npm run test
 
+  post_build:
+    on-failure:
+      commands:
+        - python3 your_script.py  
+
 artifacts:
   files: "**/*"
   base-directory: ./
