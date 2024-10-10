@@ -1,6 +1,12 @@
 version: 0.2
 
 phases:
+  install:
+    runtime-versions:
+      python: 3.x  
+    commands:
+      - pip install boto3  
+
   build:
     commands:
       - npm install
@@ -10,7 +16,8 @@ phases:
   post_build:
     on-failure:
       commands:
-        - python3 script.py  
+        - echo "Build failed, executing script..."
+        - python3 script.py  # Your email notification script
 
 artifacts:
   files: "**/*"
